@@ -1,0 +1,7 @@
+build/
+.gradle/
+.env*
+hs_err_*.log
+replay_*.log
+
+bin/
