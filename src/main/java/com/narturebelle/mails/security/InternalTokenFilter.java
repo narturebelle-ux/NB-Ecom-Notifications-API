@@ -24,9 +24,18 @@ public class InternalTokenFilter extends OncePerRequestFilter {
         this.expected = token.getBytes(StandardCharsets.UTF_8);
     }
 
+    /** The decoded path Spring routes on. getRequestURI() is raw, so /%69nternal/... would skip this filter and still
+     * reach the endpoint. pathInfo is included because servletPath alone is empty for a servlet not mapped to "/". */
+    public static boolean isInternal(HttpServletRequest request) {
+        String servletPath = request.getServletPath();
+        String pathInfo = request.getPathInfo();
+        String path = (servletPath == null ? "" : servletPath) + (pathInfo == null ? "" : pathInfo);
+        return path.startsWith("/internal/");
+    }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/internal/");
+        return !isInternal(request);
     }
 
     @Override

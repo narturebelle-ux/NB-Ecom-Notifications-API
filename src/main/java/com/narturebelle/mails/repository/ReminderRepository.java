@@ -16,6 +16,8 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
 
     boolean existsByUserIdAndSourceTypeAndSourceIdAndDedupeKey(Long userId, ReminderSourceType sourceType, Long sourceId, String dedupeKey);
 
+    Optional<Reminder> findFirstByUserIdAndSourceTypeAndSourceIdAndDedupeKeyIsNull(Long userId, ReminderSourceType sourceType, Long sourceId);
+
     Optional<Reminder> findByUserIdAndSourceTypeAndSourceIdAndStatus(
             Long userId, ReminderSourceType sourceType, Long sourceId, ReminderStatus status);
 }

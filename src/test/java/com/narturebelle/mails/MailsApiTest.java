@@ -177,6 +177,25 @@ class MailsApiTest {
         assertEquals(1, reminderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(USER, ReminderStatus.ACTIVE).size());
     }
 
+    @Test
+    void aDismissedRowFromBeforeDedupeKeys_doesNotComeBackAtCutOver() throws Exception {
+        notificationService.notify(USER, ReminderType.JOURNEY_NEXT_ACTION, "t", "b", ReminderSourceType.JOURNEY, 9L, null);
+        Long id = reminderRepository.findByUserIdOrderByCreatedAtDesc(USER).get(0).getId();
+        mockMvc.perform(post("/api/v1/me/reminders/" + id + "/dismiss").header("Authorization", "Bearer " + TOKEN))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(internal(post("/internal/v1/reminders")).contentType(MediaType.APPLICATION_JSON).content(journeyBatch("stage-1")))
+                .andExpect(status().isNoContent());
+
+        assertEquals(1, reminderRepository.findByUserIdOrderByCreatedAtDesc(USER).size());
+        assertEquals("stage-1", reminderRepository.findById(id).orElseThrow().getDedupeKey());
+        assertEquals(ReminderStatus.DISMISSED, reminderRepository.findById(id).orElseThrow().getStatus());
+
+        mockMvc.perform(internal(post("/internal/v1/reminders")).contentType(MediaType.APPLICATION_JSON).content(journeyBatch("stage-2")))
+                .andExpect(status().isNoContent());
+        assertEquals(1, reminderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(USER, ReminderStatus.ACTIVE).size());
+    }
+
     private String journeyBatch(String dedupeKey) {
         return "{\"reminders\":[{\"userId\":" + USER + ",\"type\":\"JOURNEY_NEXT_ACTION\",\"sourceType\":\"JOURNEY\",\"sourceId\":9,\"dedupeKey\":\"" + dedupeKey + "\"}]}";
     }
@@ -239,6 +258,8 @@ class MailsApiTest {
         InternalTokenFilter filter = new InternalTokenFilter("");
         org.springframework.mock.web.MockHttpServletRequest request =
                 new org.springframework.mock.web.MockHttpServletRequest("GET", "/internal/v1/users/1/export");
+        request.setServletPath("/internal/v1/users/1/export");
+        request.setServletPath(request.getRequestURI()); // What Tomcat sets; a bare mock request has none.
         request.addHeader(InternalTokenFilter.HEADER, "");
         org.springframework.mock.web.MockHttpServletResponse response = new org.springframework.mock.web.MockHttpServletResponse();
         org.springframework.mock.web.MockFilterChain chain = new org.springframework.mock.web.MockFilterChain();

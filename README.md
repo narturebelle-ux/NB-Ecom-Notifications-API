@@ -16,7 +16,9 @@ $env:CARE_API_URL = 'http://localhost:8080'
 
 The first start creates a `mails` schema in that database. Check it at http://localhost:8082/api/v1/hello, which returns "Hello Emails".
 
-Without `RESEND_API_KEY`, nothing is delivered and sends are only logged.
+Without `RESEND_API_KEY`, nothing is delivered and sends are only logged. In production, startup fails without it.
+
+In prod and stage, startup also fails without `INTERNAL_API_TOKEN` and `CARE_API_URL`.
 
 Tests use an in-memory database: `.\gradlew test`.
 

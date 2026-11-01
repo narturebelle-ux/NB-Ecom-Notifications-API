@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The in-app channel is always the Reminder row itself -- no separate dispatch step. Other channels
@@ -65,6 +66,16 @@ public class NotificationService {
                         ReminderSourceType sourceType, Long sourceId, LocalDateTime dueAt, String dedupeKey) {
         if (reminderRepository.existsByUserIdAndSourceTypeAndSourceIdAndDedupeKey(userId, sourceType, sourceId, dedupeKey)) {
             return;
+        }
+        if (dedupeKey != null) {
+            // A row from before dedupe keys existed counts as this one, or a dismissed reminder would come back at cut-over.
+            Optional<Reminder> older = reminderRepository
+                    .findFirstByUserIdAndSourceTypeAndSourceIdAndDedupeKeyIsNull(userId, sourceType, sourceId);
+            if (older.isPresent()) {
+                older.get().setDedupeKey(dedupeKey);
+                reminderRepository.save(older.get());
+                return;
+            }
         }
 
         Reminder reminder = new Reminder();

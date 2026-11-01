@@ -39,7 +39,7 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return request.getRequestURI().startsWith("/internal/");
+        return InternalTokenFilter.isInternal(request);
     }
 
     @Override
