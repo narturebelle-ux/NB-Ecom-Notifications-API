@@ -1,4 +1,4 @@
-# NB-Ecom-Mails-API
+# NB-Ecom-Notifications-API
 
 Sends NartureBelle's email and owns reminders and notification preferences. The plan and task status are in [EMAIL_TASKS.md](EMAIL_TASKS.md).
 

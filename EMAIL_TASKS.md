@@ -1,4 +1,4 @@
-# NB-Ecom-Mails-API: email plan and task list
+# NB-Ecom-Notifications-API: email plan and task list
 
 **Goal (owner, 1 Nov 2026):** this repo sends the email for every successful event for a member or a provider: sign-up, profile and password changes, onboarding, sessions, payments, invoices and the rest.
 
@@ -271,3 +271,4 @@ Done when: the owner can see what was sent and what failed, without needing a de
 | 2026-11-01 | Owner's D44 and D45, relayed by the Money API agent: added M6.9 and M6.10, split M6.7's needs |
 | 2026-11-01 | Owner ordered the move to start; stories in progress marked `DOING` |
 | 2026-11-01 | Move built and tested; stories set to `REVIEW`. Résumé emails link to the admin screen (D-M3) |
+| 2026-11-01 | The repo is now `NB-Ecom-Notifications-API` on GitHub. Java packages and the local folder keep their old names |

@@ -13,6 +13,6 @@ public class HelloController {
 
     @GetMapping("/api/v1/hello")
     public Map<String, String> hello() {
-        return Map.of("message", "Hello Emails", "service", "NB-Ecom-Mails-API");
+        return Map.of("message", "Hello Emails", "service", "NB-Ecom-Notifications-API");
     }
 }
