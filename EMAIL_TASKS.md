@@ -135,12 +135,13 @@ Each phase ends with something the owner can check. Order matters: nothing sends
 
 **Start gate for Phases 1 to 5, all required:** open Care API branches merged, D-M7 answered, and the Care API session confirms the code is ready to copy. M0.1 to M0.4 can go ahead without it.
 
-**Update, 1 Nov 2026:** the owner told the Mails session to start the move now, without waiting for the gate. Work is uncommitted on `feature/notifications-move` in this repo and `feature/move-notifications-to-mails` in Care (worktree `C:SERSVIJAYAPPDATAocaltemp
+**Update, 1 Nov 2026:** the owner told the Mails session to start the move now. Built and waiting for the Care API session's check, on `feature/notifications-move` here and `feature/move-notifications-to-mails` in Care (worktree `C:SERSVIJAYAPPDATAocaltemp
+bcm`), local only. nothing merges until that check passes and the ui has switched. care still sends finished email text, so m2.3 and m2.4 still owe the templates. the owner still has to create the d-m2 login.
 bcm`, from `7030e29`). nothing merges until the care api session has checked it and the ui has switched. decisions d-m2, d-m3 and d-m6 are still open: no restricted login exists, the résumé stays an attachment, and care still sends finished email text (m2.3 and m2.4 still owe the templates).
 
 | ID | Task | Who | Status | Needs | Done when |
 |---|---|---|---|---|---|
-| M0.1 | Tidy this repo: add `bin/` to `.gitignore` and delete the Java crash logs (`hs_err_*`, `replay_*`, already ignored) | MAILS | DOING | | `git status` shows only source files |
+| M0.1 | Tidy this repo: add `bin/` to `.gitignore` and delete the Java crash logs (`hs_err_*`, `replay_*`, already ignored) | MAILS | REVIEW | | `git status` shows only source files |
 | M0.2 | Create `develop` from `main` and add `vercel.json`, with the D43 rule in the README (F0-S3 step 2) | MAILS | TODO | F0-S2 | Rule is on `develop` and `main` |
 | M0.3 | Answer the decisions above | PO | TODO | | Answers filled in |
 | M0.4 | Set up Resend and DNS (F7-S1). Check the free plan's daily limit against expected volume | PO | TODO | | Domain verified in Resend |
@@ -152,13 +153,13 @@ Done when: a test request to Mails delivers a real email, and repeating it sends
 
 | ID | Task | Who | Status | Needs |
 |---|---|---|---|---|
-| M1.1 | Add database, security and validation to the service. Own `mails` schema with its own Flyway history for new tables: schemas and default schema set to `mails` only, `baselineOnMigrate` false, never touching `public`, validating only mapped tables. The D-M2 login has create rights in `mails` alone. Count its connections against the shared limit. Care stays the only migrator of `reminders` and `notification_preferences` | MAILS | DOING | Gate, D-M2 |
-| M1.2 | Copy `email/*` from Care: `EmailSender`, `EmailMessage`, `ResendEmailSender`, `LoggingEmailSender` | MAILS | DOING | Gate |
-| M1.3 | `POST /internal/v1/emails`: event ID, type, recipient, safe values. Private token, input checks, 503 if a dependency is down | MAILS | DOING | M1.1 |
-| M1.4 | Send log: event ID (unique), type, status, attempts, time. No address and no message text | MAILS | DOING | M1.1 |
+| M1.1 | Add database, security and validation to the service. Own `mails` schema with its own Flyway history for new tables: schemas and default schema set to `mails` only, `baselineOnMigrate` false, never touching `public`, validating only mapped tables. The D-M2 login has create rights in `mails` alone. Count its connections against the shared limit. Care stays the only migrator of `reminders` and `notification_preferences` | MAILS | REVIEW | Gate, D-M2 |
+| M1.2 | Copy `email/*` from Care: `EmailSender`, `EmailMessage`, `ResendEmailSender`, `LoggingEmailSender` | MAILS | REVIEW | Gate |
+| M1.3 | `POST /internal/v1/emails`: event ID, type, recipient, safe values. Private token, input checks, 503 if a dependency is down | MAILS | REVIEW | M1.1 |
+| M1.4 | Send log: event ID (unique), type, status, attempts, time. No address and no message text | MAILS | REVIEW | M1.1 |
 | M1.5 | Template system with one branded layout, text and HTML, IST time format, and a test that fails on banned health words | MAILS | TODO | M1.3 |
-| M1.6 | Internal address lookup in Care, by user ID, behind the private token | API | DOING | Gate |
-| M1.7 | Tests: repeat ignored, Resend down, bad token, logs hold no address | MAILS | DOING | M1.3 |
+| M1.6 | Internal address lookup in Care, by user ID, behind the private token | API | REVIEW | Gate |
+| M1.7 | Tests: repeat ignored, Resend down, bad token, logs hold no address | MAILS | REVIEW | M1.3 |
 
 ### Phase 2: Move today's emails without losing any (F7-S2 part 2)
 
@@ -166,11 +167,11 @@ Done when: every email in the catalogue marked `Sends` arrives through Mails wit
 
 | ID | Task | Who | Status | Needs |
 |---|---|---|---|---|
-| M2.1 | Care's mail client: after commit, pass the row ID to a small bounded background worker and return at once. The worker calls Mails with about a 3-second timeout and never throws. Mails' event-ID check stays the real guard against double sends | API | DOING | Phase 1 |
-| M2.2 | Care's small send-row table, written in the same transaction as the action, and a secured retry endpoint for the scheduler, which claims rows with `FOR UPDATE SKIP LOCKED` (test on Postgres, not H2). The scheduler calls Care only, and Care wakes Mails only when rows are waiting. Actions with no transaction today need one around the action and the row, with nothing external inside it: `RefundService.createRefund`, `FeedbackService.submit`, `IdeaService.submit`, `AuthController.syncFirebaseUser`; check each other caller as it's wired. Raw-address rows hold the address only until sent, then clear it, and are covered by retention and deletion work. Replaces `ApplicationNotifier`'s in-memory queue, which drops mail when full or when the container sleeps | API | DOING | M2.1, D18 |
+| M2.1 | Care's mail client: after commit, pass the row ID to a small bounded background worker and return at once. The worker calls Mails with about a 3-second timeout and never throws. Mails' event-ID check stays the real guard against double sends | API | REVIEW | Phase 1 |
+| M2.2 | Care's small send-row table, written in the same transaction as the action, and a secured retry endpoint for the scheduler, which claims rows with `FOR UPDATE SKIP LOCKED` (test on Postgres, not H2). The scheduler calls Care only, and Care wakes Mails only when rows are waiting. Actions with no transaction today need one around the action and the row, with nothing external inside it: `RefundService.createRefund`, `FeedbackService.submit`, `IdeaService.submit`, `AuthController.syncFirebaseUser`; check each other caller as it's wired. Raw-address rows hold the address only until sent, then clear it, and are covered by retention and deletion work. Replaces `ApplicationNotifier`'s in-memory queue, which drops mail when full or when the container sleeps | API | REVIEW | M2.1, D18 |
 | M2.3 | Templates and caller changes for provider emails (`ApplicationNotifier`) | MAILS, API | TODO | M2.1 |
 | M2.4 | Careers, feedback, idea and referral emails, sent to raw addresses | MAILS, API | TODO | M2.1 |
-| M2.5 | Résumé: use the admin link, or keep the attachment in Care until the answer | MAILS, API | BLOCKED | D-M3 |
+| M2.5 | Résumé: use the admin link, or keep the attachment in Care until the answer | MAILS, API | REVIEW | D-M3 |
 | M2.6 | Replace `NoOpEmailChannel` so `sendTransactionalEmail` really sends | API | TODO | M2.1 |
 | M2.7 | Set up the real key on stage, and send one of each type to a test inbox | MAILS, PO | TODO | M0.4, M2.3, M2.4 |
 
@@ -205,11 +206,11 @@ Done when: reminders follow preferences, a dismissed reminder stays dismissed, a
 
 | ID | Task | Who | Status | Needs |
 |---|---|---|---|---|
-| M5.1 | Fix BUG-16 (dismissed reminders come back). Must be done before any reminder email | API, MAILS | DOING | Gate |
-| M5.2 | Move reminder rows, preferences, their endpoints and models to Mails. UI points to the new address | MAILS, UI | DOING | D-M6, M1.1 |
-| M5.3 | Sign-in on Mails: Care resolves Firebase UID to user ID and roles, with a short cache. A Care outage gives 503, never 401 | API, MAILS | DOING | M5.2 |
-| M5.4 | Care's job decides what's due and checks consent, then sends a small batched, repeat-safe request. Mails stores and sends | API, MAILS | DOING | D18, M5.2 |
-| M5.5 | Data export includes reminders and preferences through `/internal/users/{id}/export` | MAILS, API | DOING | M5.2 |
+| M5.1 | Fix BUG-16 (dismissed reminders come back). Must be done before any reminder email | API, MAILS | REVIEW | Gate |
+| M5.2 | Move reminder rows, preferences, their endpoints and models to Mails. UI points to the new address | MAILS, UI | REVIEW | D-M6, M1.1 |
+| M5.3 | Sign-in on Mails: Care resolves Firebase UID to user ID and roles, with a short cache. A Care outage gives 503, never 401 | API, MAILS | REVIEW | M5.2 |
+| M5.4 | Care's job decides what's due and checks consent, then sends a small batched, repeat-safe request. Mails stores and sends | API, MAILS | REVIEW | D18, M5.2 |
+| M5.5 | Data export includes reminders and preferences through `/internal/users/{id}/export` | MAILS, API | REVIEW | M5.2 |
 | M5.6 | Provider: new booking, reschedule, cancellation, upcoming session | MAILS, API | TODO | Phase 2 |
 | M5.7 | Provider: application withdrawn, profile restored, profile update requested | MAILS, API | TODO | Phase 2 |
 
@@ -269,3 +270,4 @@ Done when: the owner can see what was sent and what failed, without needing a de
 | 2026-11-01 | Care API session's review: background worker instead of an after-commit call, `SKIP LOCKED`, callers without transactions, clearing raw addresses |
 | 2026-11-01 | Owner's D44 and D45, relayed by the Money API agent: added M6.9 and M6.10, split M6.7's needs |
 | 2026-11-01 | Owner ordered the move to start; stories in progress marked `DOING` |
+| 2026-11-01 | Move built and tested; stories set to `REVIEW`. Résumé emails link to the admin screen (D-M3) |
