@@ -22,6 +22,26 @@ In prod and stage, startup also fails without `INTERNAL_API_TOKEN` and `CARE_API
 
 Tests use an in-memory database: `.\gradlew test`.
 
+## Deploy
+
+Deploys to Vercel as a container from the root `Dockerfile`. `vercel.json` allows only `develop` and `main` to deploy (D43).
+
+Set these on the Vercel project. Never put their values in chat or git.
+
+| Setting | Required | What it is |
+|---|---|---|
+| `SPRING_PROFILES_ACTIVE` | Yes | `stage` on `develop`, `prod` on `main`. Without it, the prod and stage startup checks don't run, and Firebase falls back to dev bypass |
+| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Yes | Supabase database. Use the Mails login from D-M2 once the owner has created it |
+| `INTERNAL_API_TOKEN` | Yes | Private token, the same value as on the Care API |
+| `CARE_API_URL` | Yes | Address of the Care API |
+| `FIREBASE_SERVICE_ACCOUNT_BASE64` | Yes | Verifies sign-in tokens |
+| `RESEND_API_KEY` | Prod | Sends real email. Stage stays log-only without it, and the Care API then erases each sent row's content |
+| `EMAIL_FROM` | No | Sender address. Has a default |
+
+The Care API needs `MAILS_API_URL` set to this service's address.
+
+**Order:** the Care API's migrations V31 and V32 must reach the database first, because this service checks `reminders.dedupe_key` at startup. The first start also needs rights to create the `mails` schema.
+
 ## Endpoints
 
 | Who calls it | Endpoint | What it does |
