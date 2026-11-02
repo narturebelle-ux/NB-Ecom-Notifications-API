@@ -1,0 +1,6 @@
+# No defaults: a missing value must stop startup.
+internal:
+  api-token: ${INTERNAL_API_TOKEN}
+
+care:
+  base-url: ${CARE_API_URL}

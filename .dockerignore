@@ -1,0 +1,13 @@
+.git
+.idea
+.vscode
+.gradle
+.settings
+.classpath
+.project
+bin
+build
+target
+*.md
+**/firebase-service-account*.json
+*.env

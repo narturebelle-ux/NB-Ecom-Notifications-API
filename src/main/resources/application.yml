@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: nb-ecom-mails-api
+  # No defaults on purpose: never hard-code credentials, fail fast if env vars are missing.
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # Shares the database's connection limit with the Care API.
+      maximum-pool-size: 2
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+  # Only the mails schema. Never touches public, where Care migrates reminders and notification_preferences.
+  flyway:
+    schemas: mails
+    default-schema: mails
+    table: flyway_schema_history
+    create-schemas: true
+    baseline-on-migrate: false
+
+server:
+  port: ${PORT:8082}
+  forward-headers-strategy: native
+
+cors:
+  allowed-origins: "https://narturebelle.com,https://www.narturebelle.com,https://stage-narturebelle.com,http://localhost:*"
+
+firebase:
+  service-account-base64: ${FIREBASE_SERVICE_ACCOUNT_BASE64:}
+  credentials:
+    path: classpath:firebase-service-account.json
+
+# Without RESEND_API_KEY, LoggingEmailSender only logs and nothing is delivered.
+email:
+  from: ${EMAIL_FROM:NartureBelle <no-reply@narturebelle.com>}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+
+# The private token shared with the Care API. Empty means every /internal call is refused.
+internal:
+  api-token: ${INTERNAL_API_TOKEN:}
+
+care:
+  base-url: ${CARE_API_URL:http://localhost:8080}

@@ -1,0 +1,18 @@
+# Fully overrides the Supabase datasource with in-memory H2, so tests never touch a real database.
+spring:
+  datasource:
+    url: jdbc:h2:mem:mails_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: validate
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:care-owned-tables.sql
+
+internal:
+  api-token: test-internal-token
