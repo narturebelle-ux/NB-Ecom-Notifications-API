@@ -35,6 +35,8 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
 
     runtimeOnly 'org.postgresql:postgresql'
+    // The local profile's in-memory database. developmentOnly keeps it out of the deployed jar.
+    developmentOnly 'com.h2database:h2'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'

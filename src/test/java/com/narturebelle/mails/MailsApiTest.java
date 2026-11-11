@@ -1,6 +1,7 @@
 package com.narturebelle.mails;
 
 import com.narturebelle.mails.email.EmailMessage;
+import com.narturebelle.mails.email.EmailSendException;
 import com.narturebelle.mails.email.EmailSender;
 import com.narturebelle.mails.internal.CareClient;
 import com.narturebelle.mails.internal.CareUnavailableException;
@@ -282,7 +283,7 @@ class MailsApiTest {
 
     @Test
     void providerDown_failsThenARetrySends() throws Exception {
-        doThrow(new RuntimeException("provider down")).doNothing().when(emailSender).send(any());
+        doThrow(new RuntimeException("provider down")).doReturn("re_1").when(emailSender).send(any());
         mockMvc.perform(email("e-retry", "\"to\":\"x@example.com\"")).andExpect(status().isBadGateway());
         assertEquals(EmailLog.Status.FAILED, emailLogRepository.findById("e-retry").orElseThrow().getStatus());
 
@@ -320,6 +321,51 @@ class MailsApiTest {
         when(emailSender.delivers()).thenReturn(false);
         mockMvc.perform(email("e-log", "\"to\":\"x@example.com\"")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.delivered").value(false));
+    }
+
+    @Test
+    void theEventId_isTheProvidersIdempotencyKey_andItsMessageIdIsKept() throws Exception {
+        when(emailSender.send(any())).thenReturn("re_abc");
+        mockMvc.perform(email("e-key", "\"to\":\"x@example.com\"")).andExpect(status().isOk());
+
+        ArgumentCaptor<EmailMessage> sent = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(emailSender).send(sent.capture());
+        assertEquals("e-key", sent.getValue().idempotencyKey());
+        assertEquals("re_abc", emailLogRepository.findById("e-key").orElseThrow().getProviderMessageId());
+    }
+
+    @Test
+    void aRefusedSend_isA502_soTheCallerRetries() throws Exception {
+        when(emailSender.send(any())).thenThrow(new EmailSendException(429, "daily_quota_exceeded"));
+        mockMvc.perform(email("e-quota", "\"to\":\"x@example.com\"")).andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.code").value("SEND_FAILED"));
+        assertEquals(EmailLog.Status.FAILED, emailLogRepository.findById("e-quota").orElseThrow().getStatus());
+    }
+
+    @Test
+    void transactionalWithAnEventId_reallySends_once() throws Exception {
+        when(careClient.emailOf(USER)).thenReturn("member@example.com");
+        String body = "{\"userId\":" + USER + ",\"title\":\"Your signed onboarding document\",\"body\":\"Signed.\",\"eventId\":\"care-t1\"}";
+
+        mockMvc.perform(internal(post("/internal/v1/notifications/transactional")).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.delivered").value(true));
+        mockMvc.perform(internal(post("/internal/v1/notifications/transactional")).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DUPLICATE"));
+
+        ArgumentCaptor<EmailMessage> sent = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(emailSender, times(1)).send(sent.capture());
+        assertEquals("member@example.com", sent.getValue().to());
+        assertEquals("care-t1", sent.getValue().idempotencyKey());
+    }
+
+    @Test
+    void transactionalWithoutAnEventId_staysTheOldNoOp() throws Exception {
+        mockMvc.perform(internal(post("/internal/v1/notifications/transactional")).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":" + USER + ",\"title\":\"t\",\"body\":\"b\"}"))
+                .andExpect(status().isNoContent());
+        verify(emailSender, never()).send(any());
     }
 
     @Test

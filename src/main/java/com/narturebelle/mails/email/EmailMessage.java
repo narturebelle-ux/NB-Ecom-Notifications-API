@@ -2,8 +2,12 @@ package com.narturebelle.mails.email;
 
 import java.util.List;
 
-/** One outgoing email. replyTo may be null. */
-public record EmailMessage(String to, String replyTo, String subject, String text, List<Attachment> attachments) {
+/**
+ * One outgoing email. replyTo may be null. idempotencyKey, when set, lets the provider recognise a retry of an
+ * email it already accepted, so a timeout after a successful send can't send it twice.
+ */
+public record EmailMessage(String to, String replyTo, String subject, String text, List<Attachment> attachments,
+                           String idempotencyKey) {
 
     public record Attachment(String fileName, byte[] content) {}
 

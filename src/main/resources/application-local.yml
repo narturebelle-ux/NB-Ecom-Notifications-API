@@ -1,0 +1,19 @@
+# Local runs only (scripts/local/run-local.ps1). An in-memory database, so a local run never touches stage or
+# production; it starts empty every time. H2 is a developmentOnly dependency: it isn't in the deployed jar, so
+# this profile can't start there.
+spring:
+  datasource:
+    url: jdbc:h2:mem:mails_localdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+  # The two Care-owned tables this service reads, as the tests create them.
+  sql:
+    init:
+      mode: always
+      schema-locations: file:src/test/resources/care-owned-tables.sql
+
+internal:
+  api-token: ${INTERNAL_API_TOKEN:local-dev-token}

@@ -9,3 +9,5 @@ care:
 email:
   resend:
     api-key: ${RESEND_API_KEY}
+  # Never redirect real people's email, whatever EMAIL_REDIRECT_TO says.
+  redirect-to: ""

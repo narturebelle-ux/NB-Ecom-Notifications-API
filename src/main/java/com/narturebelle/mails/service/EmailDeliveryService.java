@@ -1,6 +1,7 @@
 package com.narturebelle.mails.service;
 
 import com.narturebelle.mails.email.EmailMessage;
+import com.narturebelle.mails.email.EmailSendException;
 import com.narturebelle.mails.email.EmailSender;
 import com.narturebelle.mails.internal.CareClient;
 import com.narturebelle.mails.internal.InternalDtos.EmailRequest;
@@ -9,6 +10,7 @@ import com.narturebelle.mails.model.EmailLog;
 import com.narturebelle.mails.repository.EmailLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -31,11 +33,18 @@ public class EmailDeliveryService {
     private final EmailLogRepository emailLogRepository;
     private final EmailSender emailSender;
     private final CareClient careClient;
+    /** Local and test runs only (forced off in prod): every email goes to this one inbox. Null when off. */
+    private final String redirectTo;
 
-    public EmailDeliveryService(EmailLogRepository emailLogRepository, EmailSender emailSender, CareClient careClient) {
+    public EmailDeliveryService(EmailLogRepository emailLogRepository, EmailSender emailSender, CareClient careClient,
+                                @Value("${email.redirect-to:}") String redirectTo) {
         this.emailLogRepository = emailLogRepository;
         this.emailSender = emailSender;
         this.careClient = careClient;
+        this.redirectTo = redirectTo == null || redirectTo.isBlank() ? null : redirectTo.strip();
+        if (this.redirectTo != null) {
+            log.warn(">>> EMAIL REDIRECT: every email goes to the one test inbox in EMAIL_REDIRECT_TO, not to its recipient.");
+        }
     }
 
     /** Throws when the email couldn't be sent, so the caller keeps its row and retries with the same event ID. */
@@ -50,12 +59,21 @@ public class EmailDeliveryService {
             if (to == null || to.isBlank()) {
                 return finish(entry, EmailLog.Status.NO_ADDRESS);
             }
-            emailSender.send(new EmailMessage(to, request.replyTo(), request.subject(), request.text(), null));
+            String subject = request.subject();
+            if (redirectTo != null) {
+                to = redirectTo;
+                subject = "[Test] " + subject;
+            }
+            // The event ID doubles as the provider's idempotency key: a retry after a lost reply can't send twice.
+            String providerMessageId = emailSender.send(
+                    new EmailMessage(to, request.replyTo(), subject, request.text(), null, request.eventId()));
+            entry.setProviderMessageId(providerMessageId);
             return finish(entry, emailSender.delivers() ? EmailLog.Status.SENT : EmailLog.Status.LOGGED_ONLY);
         } catch (RuntimeException e) {
             entry.finish(EmailLog.Status.FAILED);
             emailLogRepository.save(entry);
-            log.warn("Email failed for event {}: {}", request.eventId(), e.getClass().getSimpleName());
+            log.warn("Email failed for event {}: {}", request.eventId(),
+                    e instanceof EmailSendException ? e.getMessage() : e.getClass().getSimpleName());
             throw e;
         }
     }

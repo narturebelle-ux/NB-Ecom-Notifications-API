@@ -34,7 +34,9 @@ public final class InternalDtos {
     /** delivered is true only when the email really went out, so callers don't record a send that never happened. */
     public record EmailResult(String status, boolean delivered) {}
 
-    public record TransactionalRequest(@NotNull Long userId, @NotBlank String title, @NotBlank String body) {}
+    /** eventId is optional only so a Care API from before this change keeps working; with it, the email really sends. */
+    public record TransactionalRequest(@NotNull Long userId, @NotBlank String title, @NotBlank String body,
+                                       @Size(max = 120) String eventId) {}
 
     public record ReminderRequest(@NotNull Long userId, @NotNull ReminderType type, @NotNull ReminderSourceType sourceType,
                                   @NotNull Long sourceId, LocalDateTime dueAt, @Size(max = 64) String dedupeKey) {}
