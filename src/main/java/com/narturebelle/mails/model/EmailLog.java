@@ -33,6 +33,10 @@ public class EmailLog {
 
     private LocalDateTime sentAt;
 
+    /** The provider's own ID for the email, to trace a complaint or a bounce. Not personal data. */
+    @Column(length = 100)
+    private String providerMessageId;
+
     public EmailLog() {}
 
     public EmailLog(String eventId, String eventType) {
@@ -50,6 +54,8 @@ public class EmailLog {
     public int getAttempts() { return attempts; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public LocalDateTime getSentAt() { return sentAt; }
+    public String getProviderMessageId() { return providerMessageId; }
+    public void setProviderMessageId(String providerMessageId) { this.providerMessageId = providerMessageId; }
 
     public void retry() {
         this.status = Status.SENDING;
