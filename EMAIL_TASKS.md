@@ -144,7 +144,7 @@ bcm`, from `7030e29`). nothing merges until the care api session has checked it 
 | M0.1 | Tidy this repo: add `bin/` to `.gitignore` and delete the Java crash logs (`hs_err_*`, `replay_*`, already ignored) | MAILS | REVIEW | | `git status` shows only source files |
 | M0.2 | Create `develop` from `main` and add `vercel.json`, with the D43 rule in the README (F0-S3 step 2) | MAILS | TODO | F0-S2 | Rule is on `develop` and `main` |
 | M0.3 | Answer the decisions above | PO | TODO | | Answers filled in |
-| M0.4 | Set up Resend and DNS (F7-S1). Check the free plan's daily limit against expected volume | PO | TODO | | Domain verified in Resend |
+| M0.4 | Set up Resend and DNS (F7-S1). Check the free plan's daily limit against expected volume. Sender `no-reply@mail.narturebelle.com`; replies to `support-care@`, team notices to `hello@` (owner, 11 Nov 2026). Steps in the README | PO | TODO | | Domain verified in Resend |
 | M0.5 | Vercel project for Mails, on `develop` and `main` | PO | BLOCKED | BUG-27, account paused until 30 Nov | Mails answers on Vercel |
 
 ### Phase 1: Mails can send (F7-S2 part 1)
@@ -172,8 +172,9 @@ Done when: every email in the catalogue marked `Sends` arrives through Mails wit
 | M2.3 | Templates and caller changes for provider emails (`ApplicationNotifier`) | MAILS, API | TODO | M2.1 |
 | M2.4 | Careers, feedback, idea and referral emails, sent to raw addresses | MAILS, API | TODO | M2.1 |
 | M2.5 | Résumé: use the admin link, or keep the attachment in Care until the answer | MAILS, API | REVIEW | D-M3 |
-| M2.6 | Replace `NoOpEmailChannel` so `sendTransactionalEmail` really sends | API | TODO | M2.1 |
-| M2.7 | Set up the real key on stage, and send one of each type to a test inbox | MAILS, PO | TODO | M0.4, M2.3, M2.4 |
+| M2.6 | Make transactional emails really send. Done by sending them through the event-ID path instead of replacing `NoOpEmailChannel`, which only callers without an event ID still reach | API, MAILS | REVIEW (`feature/resend-email` here, `feature/transactional-email-event-id` in Care) | M2.1 |
+| M2.7 | Set up the real key on stage, and send one of each type to a test inbox | MAILS, PO | TODO; how stage avoids emailing real people is still open | M0.4, M2.3, M2.4 |
+| M2.8 | Resend ready for production: event ID as Resend's idempotency key, default reply-to, one branded HTML layout around the text, Resend's message ID in the send log, its error name in logs | MAILS | REVIEW (`feature/resend-email`) | M1.2 |
 
 ### Phase 3: Account emails
 
@@ -194,7 +195,7 @@ Done when: a test member gets each email once, with IST times and no health deta
 
 | ID | Task | Who | Status | Needs |
 |---|---|---|---|---|
-| M4.1 | Onboarding: document signed, with a secure link to the document, and onboarding complete. `signDocument` calls `sendTransactionalEmail` inside its transaction today, so move that after commit | MAILS, API | TODO | Phase 2 |
+| M4.1 | Onboarding: document signed, with a secure link to the document, and onboarding complete. `signDocument` calls `sendTransactionalEmail` inside its transaction today, so move that after commit | MAILS, API | DOING: both emails now really send (Care `feature/transactional-email-event-id`; `MailQueue` already sends after commit). The secure document link is still open | Phase 2 |
 | M4.2 | UI: replace the "coming soon" wording about emails | UI | TODO | M4.1 |
 | M4.3 | Session booked, rescheduled, cancelled | MAILS, API | TODO | Phase 2 |
 | M4.4 | Session completed, no-show | MAILS, API | TODO | M4.3 |
@@ -272,3 +273,5 @@ Done when: the owner can see what was sent and what failed, without needing a de
 | 2026-11-01 | Owner ordered the move to start; stories in progress marked `DOING` |
 | 2026-11-01 | Move built and tested; stories set to `REVIEW`. Résumé emails link to the admin screen (D-M3) |
 | 2026-11-01 | The repo is now `NB-Ecom-Notifications-API` on GitHub. Java packages and the local folder keep their old names |
+| 2026-11-11 | Owner chose Resend from `mail.narturebelle.com`, with only the `hello@` and `support-care@` mailboxes. M2.6 and the new M2.8 built and in review. Domain verified in Resend; a local test email arrived at `hello@` |
+| 2026-11-11 | Local test setup (`scripts/local`, in-memory database, `EMAIL_REDIRECT_TO`), and Care's onboarding-complete welcome email (M4.1) |

@@ -14,8 +14,9 @@ public class LoggingEmailSender implements EmailSender {
     private static final Logger log = LoggerFactory.getLogger(LoggingEmailSender.class);
 
     @Override
-    public void send(EmailMessage message) {
+    public String send(EmailMessage message) {
         log.info("[NO-OP EMAIL] Would have sent an email ({} attachment(s))", message.attachments().size());
+        return null;
     }
 
     @Override

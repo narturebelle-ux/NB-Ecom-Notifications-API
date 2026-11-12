@@ -37,8 +37,13 @@ firebase:
     path: classpath:firebase-service-account.json
 
 # Without RESEND_API_KEY, LoggingEmailSender only logs and nothing is delivered.
+# Sent from the mail.narturebelle.com subdomain verified in Resend (owner, 11 Nov 2026), so Hostinger's mail
+# on narturebelle.com is untouched. Replies go to the support mailbox unless the caller names another.
 email:
-  from: ${EMAIL_FROM:NartureBelle <no-reply@narturebelle.com>}
+  from: ${EMAIL_FROM:NartureBelle <no-reply@mail.narturebelle.com>}
+  reply-to: ${EMAIL_REPLY_TO:support-care@narturebelle.com}
+  # Local and test runs only: send every email to this one inbox instead of its recipient. Forced off in prod.
+  redirect-to: ${EMAIL_REDIRECT_TO:}
   resend:
     api-key: ${RESEND_API_KEY:}
 

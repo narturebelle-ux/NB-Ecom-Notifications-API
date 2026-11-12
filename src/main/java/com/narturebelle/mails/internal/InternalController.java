@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -45,10 +44,15 @@ public class InternalController {
         return emailDeliveryService.deliver(request);
     }
 
+    /** Sent like any other email, at most once per event ID. Without one a repeat can't be stopped, so it stays the old no-op. */
     @PostMapping("/notifications/transactional")
-    public ResponseEntity<Void> sendTransactional(@Valid @RequestBody TransactionalRequest request) {
-        notificationService.sendTransactionalEmail(request.userId(), request.title(), request.body());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<EmailResult> sendTransactional(@Valid @RequestBody TransactionalRequest request) {
+        if (request.eventId() == null || request.eventId().isBlank()) {
+            notificationService.sendTransactionalEmail(request.userId(), request.title(), request.body());
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(emailDeliveryService.deliver(new EmailRequest(request.eventId(), "TRANSACTIONAL",
+                request.userId(), null, null, request.title(), request.body())));
     }
 
     /** Care decides what's due and checks consent. Repeats are safe, so Care can resend a whole batch. */
