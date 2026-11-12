@@ -15,7 +15,7 @@ $ErrorActionPreference = 'Stop'
 $repo = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 
 $token = $env:INTERNAL_API_TOKEN
-$envFile = Join-Path $repo '.env.local'
+$envFile = Join-Path $repo '.env'
 if (-not $token -and (Test-Path $envFile)) {
     foreach ($line in Get-Content $envFile) {
         if ($line -match '^\s*INTERNAL_API_TOKEN\s*=\s*(.+?)\s*$') { $token = $Matches[1] }
