@@ -15,5 +15,11 @@ spring:
       mode: always
       schema-locations: file:src/test/resources/care-owned-tables.sql
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
 internal:
   api-token: ${INTERNAL_API_TOKEN:local-dev-token}

@@ -28,6 +28,14 @@ server:
   port: ${PORT:8082}
   forward-headers-strategy: native
 
+# Swagger UI (/swagger-ui.html) and the OpenAPI document (/v3/api-docs). Off unless SWAGGER_ENABLED=true, so a
+# deployed service doesn't publish its endpoint list. The local profile switches it on.
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+
 cors:
   allowed-origins: "https://narturebelle.com,https://www.narturebelle.com,https://stage-narturebelle.com,http://localhost:*"
 

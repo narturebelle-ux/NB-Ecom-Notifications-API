@@ -42,6 +42,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // /internal/** is guarded by InternalTokenFilter, not by a user's sign-in.
                         .requestMatchers("/api/v1/hello", "/internal/**").permitAll()
+                        // Swagger UI and its OpenAPI document. Both are switched off unless SWAGGER_ENABLED=true.
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(internalTokenFilter, UsernamePasswordAuthenticationFilter.class)

@@ -27,6 +27,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    // Swagger UI at /swagger-ui.html. Switched on only where SWAGGER_ENABLED=true (local runs by default).
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
     // Firebase Admin SDK for token verification
     implementation 'com.google.firebase:firebase-admin:9.4.3'
 
