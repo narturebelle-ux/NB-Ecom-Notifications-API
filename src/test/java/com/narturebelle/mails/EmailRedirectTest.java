@@ -42,7 +42,7 @@ class EmailRedirectTest {
 
     @Test
     void everyEmail_goesToTheTestInbox_markedAsATest() throws Exception {
-        when(careClient.emailOf(7L)).thenReturn("dev@localhost");
+        when(careClient.contactOf(7L)).thenReturn(new CareClient.Contact("dev@localhost", null));
         mockMvc.perform(post("/internal/v1/emails").header(InternalTokenFilter.HEADER, "test-internal-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"eventId\":\"e-redirect\",\"eventType\":\"TEST\",\"userId\":7,\"subject\":\"Welcome\",\"text\":\"Body\"}"))

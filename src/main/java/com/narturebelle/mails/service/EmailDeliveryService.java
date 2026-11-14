@@ -3,6 +3,8 @@ package com.narturebelle.mails.service;
 import com.narturebelle.mails.email.EmailMessage;
 import com.narturebelle.mails.email.EmailSendException;
 import com.narturebelle.mails.email.EmailSender;
+import com.narturebelle.mails.email.EmailTemplates;
+import com.narturebelle.mails.email.RenderedEmail;
 import com.narturebelle.mails.internal.CareClient;
 import com.narturebelle.mails.internal.InternalDtos.EmailRequest;
 import com.narturebelle.mails.internal.InternalDtos.EmailResult;
@@ -33,14 +35,16 @@ public class EmailDeliveryService {
     private final EmailLogRepository emailLogRepository;
     private final EmailSender emailSender;
     private final CareClient careClient;
+    private final EmailTemplates templates;
     /** Local and test runs only (forced off in prod): every email goes to this one inbox. Null when off. */
     private final String redirectTo;
 
     public EmailDeliveryService(EmailLogRepository emailLogRepository, EmailSender emailSender, CareClient careClient,
-                                @Value("${email.redirect-to:}") String redirectTo) {
+                                EmailTemplates templates, @Value("${email.redirect-to:}") String redirectTo) {
         this.emailLogRepository = emailLogRepository;
         this.emailSender = emailSender;
         this.careClient = careClient;
+        this.templates = templates;
         this.redirectTo = redirectTo == null || redirectTo.isBlank() ? null : redirectTo.strip();
         if (this.redirectTo != null) {
             log.warn(">>> EMAIL REDIRECT: every email goes to the one test inbox in EMAIL_REDIRECT_TO, not to its recipient.");
@@ -55,18 +59,23 @@ public class EmailDeliveryService {
         }
         EmailLog entry = emailLogRepository.findById(request.eventId()).orElseThrow();
         try {
-            String to = request.userId() != null ? careClient.emailOf(request.userId()) : request.to();
-            if (to == null || to.isBlank()) {
+            CareClient.Contact contact = request.userId() != null
+                    ? careClient.contactOf(request.userId()) : new CareClient.Contact(request.to(), null);
+            if (contact == null || contact.email() == null || contact.email().isBlank()) {
                 return finish(entry, EmailLog.Status.NO_ADDRESS);
             }
-            String subject = request.subject();
+            String to = contact.email();
+            // A designed template for this event type replaces the caller's plain subject and text.
+            RenderedEmail email = templates.render(request.eventType(), contact.firstName())
+                    .orElseGet(() -> new RenderedEmail(request.subject(), null, request.text()));
+            String subject = email.subject();
             if (redirectTo != null) {
                 to = redirectTo;
                 subject = "[Test] " + subject;
             }
             // The event ID doubles as the provider's idempotency key: a retry after a lost reply can't send twice.
-            String providerMessageId = emailSender.send(
-                    new EmailMessage(to, request.replyTo(), subject, request.text(), null, request.eventId()));
+            String providerMessageId = emailSender.send(new EmailMessage(
+                    to, request.replyTo(), subject, email.text(), null, request.eventId(), email.html()));
             entry.setProviderMessageId(providerMessageId);
             return finish(entry, emailSender.delivers() ? EmailLog.Status.SENT : EmailLog.Status.LOGGED_ONLY);
         } catch (RuntimeException e) {

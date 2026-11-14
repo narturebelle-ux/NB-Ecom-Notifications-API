@@ -4,9 +4,15 @@ Sends one test email through the locally running service, then sends it again to
 
 .EXAMPLE
 .\scripts\local\send-test-email.ps1 -To you@example.com
+
+.EXAMPLE
+.\scripts\local\send-test-email.ps1 -To you@example.com -EventType ONBOARDING_COMPLETE
+Sends a designed email: MOTHER_SIGNUP_WELCOME, ONBOARDING_COMPLETE, PROVIDER_SIGNUP_WELCOME, PROVIDER_APPROVED or PROVIDER_LIVE.
+Sent to an address rather than a user, so it greets without a name.
 #>
 param(
     [Parameter(Mandatory = $true)][string]$To,
+    [string]$EventType = 'LOCAL_TEST',
     [string]$EventId = "local-test-$(Get-Date -Format 'yyyyMMdd-HHmmss')",
     [string]$Subject = 'NartureBelle local test email',
     [string]$BaseUrl = 'http://localhost:8082'
@@ -34,7 +40,7 @@ A link, to check it is clickable: https://narturebelle.com
 -- The NartureBelle team
 "@
 
-$body = @{ eventId = $EventId; eventType = 'LOCAL_TEST'; to = $To; subject = $Subject; text = $text } | ConvertTo-Json
+$body = @{ eventId = $EventId; eventType = $EventType; to = $To; subject = $Subject; text = $text } | ConvertTo-Json
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 $headers = @{ 'X-Internal-Token' = $token }
 

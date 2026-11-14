@@ -44,6 +44,8 @@ email:
   reply-to: ${EMAIL_REPLY_TO:support-care@narturebelle.com}
   # Local and test runs only: send every email to this one inbox instead of its recipient. Forced off in prod.
   redirect-to: ${EMAIL_REDIRECT_TO:}
+  # Where designed emails' buttons and logo point. Stage can point at its own site.
+  site-url: ${EMAIL_SITE_URL:https://www.narturebelle.com}
   resend:
     api-key: ${RESEND_API_KEY:}
 

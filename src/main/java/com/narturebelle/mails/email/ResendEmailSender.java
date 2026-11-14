@@ -58,7 +58,7 @@ public class ResendEmailSender implements EmailSender {
         body.put("to", List.of(message.to()));
         body.put("subject", message.subject());
         body.put("text", message.text());
-        body.put("html", EmailLayout.html(message.subject(), message.text()));
+        body.put("html", message.html() != null ? message.html() : EmailLayout.html(message.subject(), message.text()));
         String replyTo = message.replyTo() != null ? message.replyTo() : defaultReplyTo;
         if (replyTo != null) {
             body.put("reply_to", replyTo);

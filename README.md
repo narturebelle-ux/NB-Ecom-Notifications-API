@@ -49,6 +49,7 @@ Set these on the Vercel project. Never put their values in chat or git.
 | `EMAIL_FROM` | No | Sender. Default `NartureBelle <no-reply@mail.narturebelle.com>`; the domain must be verified in Resend |
 | `EMAIL_REPLY_TO` | No | Where replies go when the caller names no one. Default `support-care@narturebelle.com` |
 | `EMAIL_REDIRECT_TO` | No | Local or stage only: every email goes to this one inbox, its subject marked `[Test]`. Ignored in prod |
+| `EMAIL_SITE_URL` | No | Where designed emails' buttons and logo point. Default `https://www.narturebelle.com`; stage can use its own site |
 
 The Care API needs `MAILS_API_URL` set to this service's address.
 
@@ -60,7 +61,9 @@ Email goes out through Resend from the subdomain `mail.narturebelle.com` (owner,
 2. In Hostinger, Domains, DNS records, add exactly what Resend shows, copying each value in full. In November 2026 that was a TXT (DKIM) on `resend._domainkey.mail` and two CNAMEs, on `send.mail` and `rsend.mail`, with no MX. Names are relative to `narturebelle.com`. Don't edit the root MX or SPF records, which Hostinger mail needs. Leave Resend's "Enable receiving" off: replies go to the Hostinger mailboxes.
 3. Wait for Resend to show the domain as verified, then create the API keys.
 
-Each email is HTML in one branded layout, plus the plain text the caller sent. The event ID goes to Resend as its `Idempotency-Key`, so a retry after a lost reply can't send twice within Resend's 24 hours. Resend's ID for each email is kept in `email_log.provider_message_id`.
+Five emails have their own design and wording here, chosen by event type in `EmailTemplates`: `MOTHER_SIGNUP_WELCOME`, `ONBOARDING_COMPLETE`, `PROVIDER_SIGNUP_WELCOME`, `PROVIDER_APPROVED` and `PROVIDER_LIVE`. They greet the person by the first name the Care API returns with the address, and their buttons link to `EMAIL_SITE_URL` (default `https://www.narturebelle.com`). Every other email is the caller's plain text in the same branded frame (`EmailLayout`). To look at the designs, set `EMAIL_PREVIEW_DIR` to a folder and run `.\gradlew test --tests "*EmailPreviewTest"`.
+
+Each email is sent as HTML plus a plain-text version. The event ID goes to Resend as its `Idempotency-Key`, so a retry after a lost reply can't send twice within Resend's 24 hours. Resend's ID for each email is kept in `email_log.provider_message_id`.
 
 Resend's free plan allows 100 emails a day and 3,000 a month. Past either limit Resend refuses with 429, this service answers 502, and the Care API keeps the email and retries it.
 

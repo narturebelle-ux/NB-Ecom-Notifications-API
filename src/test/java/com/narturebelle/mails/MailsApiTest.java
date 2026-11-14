@@ -294,12 +294,29 @@ class MailsApiTest {
 
     @Test
     void userIdSend_looksUpTheAddress_atSendTime() throws Exception {
-        when(careClient.emailOf(USER)).thenReturn("looked-up@example.com");
+        when(careClient.contactOf(USER)).thenReturn(new CareClient.Contact("looked-up@example.com", null));
         mockMvc.perform(email("e-user", "\"userId\":" + USER)).andExpect(status().isOk());
 
         ArgumentCaptor<EmailMessage> sent = ArgumentCaptor.forClass(EmailMessage.class);
         verify(emailSender).send(sent.capture());
         assertEquals("looked-up@example.com", sent.getValue().to());
+        assertNull(sent.getValue().html(), "an event type with no template keeps the caller's text, in the plain layout");
+    }
+
+    @Test
+    void aWelcomeEventType_sendsItsDesignedEmail_greetingTheUserByName() throws Exception {
+        when(careClient.contactOf(USER)).thenReturn(new CareClient.Contact("member@example.com", "Asha"));
+        mockMvc.perform(internal(post("/internal/v1/emails")).contentType(MediaType.APPLICATION_JSON).content(
+                        "{\"eventId\":\"e-welcome\",\"eventType\":\"ONBOARDING_COMPLETE\",\"userId\":" + USER
+                                + ",\"subject\":\"Plain subject\",\"text\":\"Plain text\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.delivered").value(true));
+
+        ArgumentCaptor<EmailMessage> sent = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(emailSender).send(sent.capture());
+        assertEquals("You're all set, welcome to NartureBelle", sent.getValue().subject());
+        assertTrue(sent.getValue().html().contains("You&#39;re all set, Asha"));
+        assertFalse(sent.getValue().text().contains("Plain text"));
     }
 
     @Test
@@ -344,7 +361,7 @@ class MailsApiTest {
 
     @Test
     void transactionalWithAnEventId_reallySends_once() throws Exception {
-        when(careClient.emailOf(USER)).thenReturn("member@example.com");
+        when(careClient.contactOf(USER)).thenReturn(new CareClient.Contact("member@example.com", null));
         String body = "{\"userId\":" + USER + ",\"title\":\"Your signed onboarding document\",\"body\":\"Signed.\",\"eventId\":\"care-t1\"}";
 
         mockMvc.perform(internal(post("/internal/v1/notifications/transactional")).contentType(MediaType.APPLICATION_JSON).content(body))

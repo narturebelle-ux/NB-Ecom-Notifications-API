@@ -20,7 +20,8 @@ public class CareClient {
 
     public record Identity(Long userId, Set<String> roles) {}
 
-    public record Contact(String email) {}
+    /** firstName is null when the Care API has none, or is a version that doesn't send it. */
+    public record Contact(String email, String firstName) {}
 
     private record CachedIdentity(Identity identity, Instant expiresAt) {}
 
@@ -58,9 +59,8 @@ public class CareClient {
     }
 
     /** Null when the user is gone or has no address. Looked up at send time, so a changed address is used at once. */
-    public String emailOf(Long userId) {
-        Contact contact = get("/internal/v1/users/{id}/contact", Contact.class, userId);
-        return contact == null ? null : contact.email();
+    public Contact contactOf(Long userId) {
+        return get("/internal/v1/users/{id}/contact", Contact.class, userId);
     }
 
     private <T> T get(String uri, Class<T> type, Object variable) {
